@@ -5,11 +5,13 @@ const app = express()
 const port = 8080
 app.use(express.json())
 
-const sorts = ['id', 'author', 'authorId', 'likes', 'popularity', 'reads', 'tags'];
-const directions = ['asc', 'desc'];
+//having undefined sort and and direction parameters is acceptable
+const sorts = ['id', 'author', 'authorId', 'likes', 'popularity', 'reads', 'tags', undefined];
+const directions = ['asc', 'desc', undefined];
 
 app.get('/posts/:tags/:sortBy?/:direction?', async (req, res) => {
   let { tags, sortBy, direction } = req.params
+  if (!sorts.includes(sortBy) || !directions.includes(direction)) return res.status(400).send
   //sanitize input
   //converting to set removes duplicates to avoid duplicate API calls
   //splicing the end of the array will ensure user only able to search by 9 tags
@@ -37,10 +39,13 @@ app.get('/posts/:tags/:sortBy?/:direction?', async (req, res) => {
   }
   //turn map back into array duplicaes are now removed
   posts = Object.values(tempPostStorage)
-  console.log(`sanitized length: ${posts.length}`)
+  console.log(`sanitized length: ${posts.length} type: ${typeof posts}`)
 
-
-
+  //sort according to fields
+  if (sortBy) {
+    if (direction === 'desc') posts = posts.sort((a, b) => (b[sortBy] > a[sortBy]) ? 1 : -1);
+    else posts = posts.sort((a, b) => (b[sortBy] < a[sortBy]) ? 1 : -1);
+  }
 
   res.status(200).send(posts)
 })
